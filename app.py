@@ -1,5 +1,6 @@
 import streamlit as st
 import os
+from langchain_groq import ChatGroq
 from langchain_chroma import Chroma
 from langchain_huggingface import HuggingFaceEmbeddings
 from langchain_ollama import ChatOllama
@@ -52,9 +53,17 @@ def initialize_system():
         weights=[0.5, 0.5]
     )
 
-    # 7. LLM Setup (Hybrid Cloud/Local Logic)
-    # Checks if running on Streamlit Cloud (via secrets) or locally
-    if "OPENAI_API_KEY" in st.secrets:
+    # 7. LLM Setup (Multi-Cloud / Local Hybrid Logic)
+    if "GROQ_API_KEY" in st.secrets:
+        # FREE & FAST: Use Groq if the key is in Streamlit Secrets
+        from langchain_groq import ChatGroq
+        llm = ChatGroq(
+            groq_api_key=st.secrets["GROQ_API_KEY"],
+            model_name="llama-3.1-8b-instant",
+            temperature=0
+        )
+    elif "OPENAI_API_KEY" in st.secrets:
+        # PAID: Fallback to OpenAI if Groq isn't set
         from langchain_openai import ChatOpenAI
         llm = ChatOpenAI(
             model="gpt-3.5-turbo", 
@@ -62,7 +71,7 @@ def initialize_system():
             temperature=0
         )
     else:
-        # Fallback to local Ollama
+        # LOCAL: Fallback to local Ollama for your laptop
         llm = ChatOllama(model="llama3.2:1b", temperature=0)
     
     # 8. Define Prompt Template
